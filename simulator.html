@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coolant Loop Simulator – Cooling Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .sim-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .sim-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .sim-header h1 { font-size: 2rem; }
+    .sim-header p { color: #9da5b4; }
+
+    .sim-container {
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Component Palette */
+    .palette {
+      width: 180px;
+      background: rgba(22,27,34,0.85);
+      border: 1px solid rgba(48,54,61,0.5);
+      border-radius: 12px;
+      padding: 15px;
+      flex-shrink: 0;
+    }
+    .palette h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9da5b4;
+      margin-bottom: 12px;
+    }
+    .palette-item {
+      background: rgba(30,40,55,0.9);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: grab;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.1s;
+      user-select: none;
+    }
+    .palette-item:hover {
+      border-color: #58a6ff;
+      transform: scale(1.03);
+    }
+    .palette-item .icon { font-size: 1.5rem; }
+    .palette-item .label { font-size: 0.75rem; color: #9da5b4; margin-top: 4px; }
+
+    /* Canvas */
+    .canvas-area {
+      flex: 1;
+      background: rgba(13,17,23,0.7);
+      border: 2px dashed rgba(48,54,61,0.6);
+      border-radius: 12px;
+      min-height: 500px;
+      position: relative;
+      overflow: hidden;
+    }
+    .canvas-area.drag-over {
+      border-color: #58a6ff;
+      background: rgba(13,17,23,0.85);
+    }
+    .canvas-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #30363d;
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+
+    /* Placed Components */
+    .placed-component {
+      position: absolute;
+      background: rgba(22,27,34,0.95);
+      border: 2px solid #30363d;
+      border-radius: 10px;
+      padding: 12px 16px;
+      cursor: move;
+      user-select: none;
+      text-align: center;
+      min-width: 90px;
+      transition: box-shadow 0.2s;
+      z-index: 10;
+    }
+    .placed-component:hover {
+      box-shadow: 0 0 15px rgba(88,166,255,0.3);
+    }
+    .placed-component .icon { font-size: 1.8rem; }
+    .placed-component .comp-label { font-size: 0.7rem; color: #9da5b4; margin-top: 2px; }
+    .placed-component .temp-display {
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .placed-component .remove-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #da3633;
+      color: white;
+      font-size: 0.65rem;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .placed-component:hover .remove-btn { opacity: 1; }
+
+    /* Connection Lines (SVG) */
+    .connections-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      background: rgba(22,27,34,0.85);
+      border: 1px solid rgba(48,54,61,0.5);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .controls-panel h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9da5b4;
+      margin-bottom: 15px;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
+    .control-row label {
+      width: 140px;
+      font-size: 0.85rem;
+      color: #c9d1d9;
+    }
+    .control-row input[type="range"] {
+      flex: 1;
+      accent-color: #58a6ff;
+    }
+    .control-row .value-display {
+      width: 80px;
+      text-align: right;
+      font-weight: bold;
+      color: #58a6ff;
+      font-size: 0.9rem;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+    .stat-box {
+      background: rgba(30,40,55,0.8);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px 20px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .stat-box .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9da5b4;
+    }
+    .stat-box .stat-value {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .stat-value.hot { color: #f85149; }
+    .stat-value.warm { color: #f0883e; }
+    .stat-value.cool { color: #4fc3f7; }
+    .stat-value.cold { color: #3fb950; }
+
+    /* Animated flow particles */
+    @keyframes flowPulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+      padding-bottom: 30px;
+    }
+    .back-link a { color: #58a6ff; }
+  </style>
+</head>
+
+<body>
+<div class="sim-wrapper">
+
+  <div class="sim-header">
+    <h1>🌊 Coolant Loop Simulator</h1>
+    <p>Drag components onto the canvas. Adjust flow rate and heat load to see how the loop responds.</p>
+  </div>
+
+  <div class="sim-container">
+    <!-- Palette -->
+    <div class="palette">
+      <h3>Components</h3>
+      <div class="palette-item" draggable="true" data-type="heat-source">
+        <div class="icon">🔥</div>
+        <div class="label">Heat Source</div>
+      </div>
+      <div class="palette-item" draggable="true" data-type="cold-plate">
+        <div class="icon">❄️</div>
+        <div class="label">Cold Plate</div>
+      </div>
+      <div class="palette-item" draggable="true" data-type="pump">
+        <div class="icon">⚙️</div>
+        <div class="label">Pump</div>
+      </div>
+      <div class="palette-item" draggable="true" data-type="chiller">
+        <div class="icon">🧊</div>
+        <div class="label">Chiller</div>
+      </div>
+      <div class="palette-item" draggable="true" data-type="reservoir">
+        <div class="icon">🫙</div>
+        <div class="label">Reservoir</div>
+      </div>
+      <div class="palette-item" draggable="true" data-type="radiator">
+        <div class="icon">🌡️</div>
+        <div class="label">Radiator</div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="canvas">
+      <svg class="connections-layer" id="connections"></svg>
+      <div class="canvas-hint" id="canvasHint">Drag components here to build your loop</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-panel">
+    <h3>System Parameters</h3>
+    <div class="control-row">
+      <label>Flow Rate</label>
+      <input type="range" id="flowRate" min="0.1" max="5" step="0.1" value="1.5">
+      <span class="value-display" id="flowRateVal">1.5 L/min</span>
+    </div>
+    <div class="control-row">
+      <label>Heat Load</label>
+      <input type="range" id="heatLoad" min="50" max="1000" step="10" value="300">
+      <span class="value-display" id="heatLoadVal">300 W</span>
+    </div>
+    <div class="control-row">
+      <label>Ambient Temp</label>
+      <input type="range" id="ambientTemp" min="15" max="45" step="1" value="25">
+      <span class="value-display" id="ambientTempVal">25 °C</span>
+    </div>
+    <div class="control-row">
+      <label>Coolant</label>
+      <select id="coolantType" style="flex:1; padding:6px; background:#161b22; color:#e6edf3; border:1px solid #30363d; border-radius:4px;">
+        <option value="water">Water (Cp = 4.18 kJ/kg·K)</option>
+        <option value="glycol30">30% Ethylene Glycol (Cp = 3.74)</option>
+        <option value="glycol50">50% Ethylene Glycol (Cp = 3.28)</option>
+        <option value="pcs">Phase Change Slurry (Cp = 8.0)</option>
+      </select>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="stat-label">Inlet Temp</div>
+        <div class="stat-value cool" id="inletTemp">25.0 °C</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Outlet Temp</div>
+        <div class="stat-value warm" id="outletTemp">29.8 °C</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">ΔT Coolant</div>
+        <div class="stat-value" id="deltaT" style="color:#f0883e;">4.8 °C</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Junction Temp</div>
+        <div class="stat-value" id="junctionTemp">62.3 °C</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">System Status</div>
+        <div class="stat-value cold" id="systemStatus">✓ OK</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="back-link">
+    <a href="index.html">⬅ Back to Home</a>
+  </div>
+
+</div>
+
+<script>
+// Component registry
+const componentDefs = {
+  'heat-source': { icon: '🔥', label: 'Heat Source', thermalR: 0.05 },
+  'cold-plate':  { icon: '❄️', label: 'Cold Plate',  thermalR: 0.02 },
+  'pump':        { icon: '⚙️', label: 'Pump',        thermalR: 0 },
+  'chiller':     { icon: '🧊', label: 'Chiller',     thermalR: -0.03 },
+  'reservoir':   { icon: '🫙', label: 'Reservoir',   thermalR: 0.005 },
+  'radiator':    { icon: '🌡️', label: 'Radiator',    thermalR: -0.015 }
+};
+
+const coolantCp = { water: 4.18, glycol30: 3.74, glycol50: 3.28, pcs: 8.0 };
+
+let placedComponents = [];
+let draggedType = null;
+let movingComp = null;
+let moveOffset = { x: 0, y: 0 };
+
+const canvas = document.getElementById('canvas');
+const connectionsEl = document.getElementById('connections');
+const canvasHint = document.getElementById('canvasHint');
+
+// Palette drag
+document.querySelectorAll('.palette-item').forEach(item => {
+  item.addEventListener('dragstart', e => {
+    draggedType = item.dataset.type;
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+});
+
+// Canvas drop
+canvas.addEventListener('dragover', e => {
+  e.preventDefault();
+  canvas.classList.add('drag-over');
+});
+canvas.addEventListener('dragleave', () => canvas.classList.remove('drag-over'));
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  canvas.classList.remove('drag-over');
+  if (!draggedType) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - 50;
+  const y = e.clientY - rect.top - 30;
+
+  addComponent(draggedType, x, y);
+  draggedType = null;
+});
+
+function addComponent(type, x, y) {
+  const id = type + '-' + Date.now();
+  const def = componentDefs[type];
+  const comp = { id, type, x, y, def };
+  placedComponents.push(comp);
+
+  const el = document.createElement('div');
+  el.className = 'placed-component';
+  el.id = id;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.innerHTML = `
+    <button class="remove-btn" onclick="removeComponent('${id}')">✕</button>
+    <div class="icon">${def.icon}</div>
+    <div class="comp-label">${def.label}</div>
+    <div class="temp-display" id="temp-${id}"></div>
+  `;
+
+  // Drag to move
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('remove-btn')) return;
+    movingComp = comp;
+    const elRect = el.getBoundingClientRect();
+    moveOffset.x = e.clientX - elRect.left;
+    moveOffset.y = e.clientY - elRect.top;
+    el.style.zIndex = 20;
+  });
+
+  canvas.appendChild(el);
+  canvasHint.style.display = 'none';
+  updateSimulation();
+  drawConnections();
+}
+
+document.addEventListener('mousemove', e => {
+  if (!movingComp) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width - 100, e.clientX - rect.left - moveOffset.x));
+  const y = Math.max(0, Math.min(rect.height - 70, e.clientY - rect.top - moveOffset.y));
+  movingComp.x = x;
+  movingComp.y = y;
+  const el = document.getElementById(movingComp.id);
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  drawConnections();
+});
+
+document.addEventListener('mouseup', () => {
+  if (movingComp) {
+    document.getElementById(movingComp.id).style.zIndex = 10;
+    movingComp = null;
+  }
+});
+
+window.removeComponent = function(id) {
+  placedComponents = placedComponents.filter(c => c.id !== id);
+  document.getElementById(id).remove();
+  if (placedComponents.length === 0) canvasHint.style.display = 'block';
+  updateSimulation();
+  drawConnections();
+};
+
+function drawConnections() {
+  if (placedComponents.length < 2) { connectionsEl.innerHTML = ''; return; }
+
+  // Sort by x position to form a loop
+  const sorted = [...placedComponents].sort((a, b) => a.x - b.x);
+  let svg = '';
+
+  for (let i = 0; i < sorted.length; i++) {
+    const curr = sorted[i];
+    const next = sorted[(i + 1) % sorted.length];
+    const x1 = curr.x + 50;
+    const y1 = curr.y + 35;
+    const x2 = next.x + 50;
+    const y2 = next.y + 35;
+
+    // Pipe
+    svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+            stroke="#2a5a8a" stroke-width="4" stroke-linecap="round" opacity="0.5"/>`;
+    // Coolant flow (animated dash)
+    svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+            stroke="#4fc3f7" stroke-width="2" stroke-dasharray="8,6" stroke-linecap="round" opacity="0.8">
+            <animate attributeName="stroke-dashoffset" from="28" to="0" dur="${2 / getFlowRate()}s" repeatCount="indefinite"/>
+            </line>`;
+  }
+
+  connectionsEl.innerHTML = svg;
+}
+
+function getFlowRate() {
+  return parseFloat(document.getElementById('flowRate').value);
+}
+
+function updateSimulation() {
+  const flowRate = getFlowRate();
+  const heatLoad = parseFloat(document.getElementById('heatLoad').value);
+  const ambient = parseFloat(document.getElementById('ambientTemp').value);
+  const coolant = document.getElementById('coolantType').value;
+  const cp = coolantCp[coolant];
+
+  // Q = m_dot * Cp * deltaT  =>  deltaT = Q / (m_dot * Cp)
+  // Assume density ~ 1 kg/L for simplicity
+  const massFlow = flowRate / 60; // kg/s
+  const deltaT = heatLoad / (massFlow * cp * 1000);
+
+  // Count cooling components
+  const coolers = placedComponents.filter(c => ['chiller', 'radiator', 'cold-plate'].includes(c.type));
+  const heaters = placedComponents.filter(c => c.type === 'heat-source');
+  const hasPump = placedComponents.some(c => c.type === 'pump');
+
+  // Cooling effectiveness
+  let coolingFactor = 0;
+  coolers.forEach(c => {
+    if (c.type === 'chiller') coolingFactor += 0.7;
+    if (c.type === 'radiator') coolingFactor += 0.3;
+    if (c.type === 'cold-plate') coolingFactor += 0.15;
+  });
+  coolingFactor = Math.min(coolingFactor, 0.95);
+
+  const heatSources = Math.max(heaters.length, 1);
+  const effectiveHeat = heatLoad * heatSources;
+  const effectiveDeltaT = (effectiveHeat / (massFlow * cp * 1000)) * (1 - coolingFactor);
+
+  const inletTemp = ambient + (effectiveDeltaT * 0.3);
+  const outletTemp = inletTemp + effectiveDeltaT;
+  const junctionTemp = outletTemp + (effectiveHeat * 0.03);
+
+  // Pump effect
+  const pumpMultiplier = hasPump ? 1 : 0.3;
+  const finalInlet = ambient + (inletTemp - ambient) / pumpMultiplier;
+  const finalOutlet = finalInlet + effectiveDeltaT / pumpMultiplier;
+  const finalJunction = finalOutlet + (effectiveHeat * 0.03);
+
+  // Update displays
+  document.getElementById('flowRateVal').textContent = flowRate.toFixed(1) + ' L/min';
+  document.getElementById('heatLoadVal').textContent = heatLoad + ' W';
+  document.getElementById('ambientTempVal').textContent = ambient + ' °C';
+
+  const inEl = document.getElementById('inletTemp');
+  const outEl = document.getElementById('outletTemp');
+  const dtEl = document.getElementById('deltaT');
+  const jEl = document.getElementById('junctionTemp');
+  const statusEl = document.getElementById('systemStatus');
+
+  inEl.textContent = finalInlet.toFixed(1) + ' °C';
+  outEl.textContent = finalOutlet.toFixed(1) + ' °C';
+  dtEl.textContent = (finalOutlet - finalInlet).toFixed(1) + ' °C';
+  jEl.textContent = finalJunction.toFixed(1) + ' °C';
+
+  // Color coding
+  setTempColor(inEl, finalInlet);
+  setTempColor(outEl, finalOutlet);
+  setTempColor(jEl, finalJunction);
+
+  // System status
+  if (placedComponents.length === 0) {
+    statusEl.textContent = '— Empty';
+    statusEl.className = 'stat-value';
+    statusEl.style.color = '#9da5b4';
+  } else if (!hasPump) {
+    statusEl.textContent = '⚠ No Pump';
+    statusEl.className = 'stat-value';
+    statusEl.style.color = '#f0883e';
+  } else if (finalJunction > 100) {
+    statusEl.textContent = '🔥 Critical';
+    statusEl.className = 'stat-value hot';
+  } else if (finalJunction > 80) {
+    statusEl.textContent = '⚠ Warning';
+    statusEl.className = 'stat-value warm';
+  } else {
+    statusEl.textContent = '✓ OK';
+    statusEl.className = 'stat-value cold';
+  }
+
+  // Update component temp displays
+  placedComponents.forEach((comp, i) => {
+    const tempEl = document.getElementById('temp-' + comp.id);
+    if (!tempEl) return;
+    let t;
+    if (comp.type === 'heat-source') t = finalJunction;
+    else if (comp.type === 'chiller') t = ambient;
+    else if (comp.type === 'cold-plate') t = finalOutlet;
+    else if (comp.type === 'radiator') t = finalInlet + (finalOutlet - finalInlet) * 0.4;
+    else if (comp.type === 'pump') t = finalInlet;
+    else t = finalInlet + (finalOutlet - finalInlet) * 0.5;
+
+    tempEl.textContent = t.toFixed(1) + ' °C';
+    setTempColor(tempEl, t);
+  });
+
+  drawConnections();
+}
+
+function setTempColor(el, temp) {
+  if (temp > 80) { el.style.color = '#f85149'; }
+  else if (temp > 55) { el.style.color = '#f0883e'; }
+  else if (temp > 35) { el.style.color = '#4fc3f7'; }
+  else { el.style.color = '#3fb950'; }
+}
+
+// Slider listeners
+['flowRate', 'heatLoad', 'ambientTemp', 'coolantType'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateSimulation);
+});
+
+// Initial calc
+updateSimulation();
+</script>
+
+</body>
+</html>
