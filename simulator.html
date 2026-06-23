@@ -300,6 +300,10 @@
         <div class="icon">❄️</div>
         <div class="label">Cold Plate</div>
       </div>
+      <div class="palette-item" draggable="true" data-type="tim">
+        <div class="icon">🩹</div>
+        <div class="label">TIM</div>
+      </div>
       <div class="palette-item" draggable="true" data-type="pump">
         <div class="icon">⚙️</div>
         <div class="label">Pump</div>
@@ -389,6 +393,7 @@
 const componentDefs = {
   'heat-source': { icon: '🔥', label: 'Heat Source', thermalR: 0.05, rMin: 0.01, rMax: 0.15, rStep: 0.005, unit: '°C/W', power: 300, pMin: 50, pMax: 1500, pStep: 10 },
   'cold-plate':  { icon: '❄️', label: 'Cold Plate',  thermalR: 0.02, rMin: 0.005, rMax: 0.1, rStep: 0.005, unit: '°C/W' },
+  'tim':         { icon: '🩹', label: 'TIM',         thermalR: 0.015, rMin: 0.002, rMax: 0.06, rStep: 0.002, unit: '°C/W' },
   'pump':        { icon: '⚙️', label: 'Pump',        thermalR: 0, rMin: 0, rMax: 0, rStep: 0, unit: '', headPressure: 2.0, hpMin: 0.5, hpMax: 5, hpStep: 0.1 },
   'chiller':     { icon: '🧊', label: 'Chiller',     thermalR: -0.03, rMin: -0.08, rMax: -0.01, rStep: 0.005, unit: '°C/W', capacity: 500, capMin: 100, capMax: 2000, capStep: 50 },
   'reservoir':   { icon: '🫙', label: 'Reservoir',   thermalR: 0.005, rMin: 0.001, rMax: 0.02, rStep: 0.001, unit: '°C/W' },
@@ -681,13 +686,19 @@ function updateSimulation() {
   if (coldPlates.length > 0) {
     coldPlateR = coldPlates.reduce((sum, c) => sum + c.thermalR, 0) / coldPlates.length;
   }
-  const junctionTemp = outletTemp + (totalHeat * coldPlateR);
+
+  // TIM adds series thermal resistance between chip and cold plate
+  const timR = placedComponents
+    .filter(c => c.type === 'tim')
+    .reduce((sum, c) => sum + Math.abs(c.thermalR), 0);
+
+  const junctionTemp = outletTemp + (totalHeat * (coldPlateR + timR));
 
   // Pump effect
   const pumpMultiplier = hasPump ? 1 : 0.3;
   const finalInlet = ambient + (inletTemp - ambient) / pumpMultiplier;
   const finalOutlet = finalInlet + effectiveDeltaT / pumpMultiplier;
-  const finalJunction = finalOutlet + (totalHeat * coldPlateR);
+  const finalJunction = finalOutlet + (totalHeat * (coldPlateR + timR));
 
   // Update displays
   document.getElementById('flowRateVal').textContent = flowRate.toFixed(1) + ' L/min';
@@ -752,6 +763,7 @@ function updateSimulation() {
     if (comp.type === 'heat-source') t = finalJunction;
     else if (comp.type === 'chiller') t = ambient;
     else if (comp.type === 'cold-plate') t = finalOutlet;
+    else if (comp.type === 'tim') t = finalOutlet + (finalJunction - finalOutlet) * 0.5;
     else if (comp.type === 'radiator') t = finalInlet + (finalOutlet - finalInlet) * 0.4;
     else if (comp.type === 'pump') t = finalInlet;
     else t = finalInlet + (finalOutlet - finalInlet) * 0.5;
