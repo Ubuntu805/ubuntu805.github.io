@@ -381,3 +381,38 @@ article a {
   .sim-cta { animation: none; }
   .sim-cta::after { animation: none; display: none; }
 }
+
+/* ABOUT ME CALL-TO-ACTION (toned-down companion to .sim-cta) */
+.about-cta {
+  display: inline-block;
+  margin-top: 14px;
+  margin-right: 12px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 30px;
+  border: 1px solid rgba(124, 156, 255, 0.5);
+  background: linear-gradient(120deg, #3a4a8a, #5566cc, #3a4a8a);
+  background-size: 200% 200%;
+  animation: aboutGradient 8s ease infinite;
+  box-shadow: 0 0 10px rgba(85, 102, 204, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.about-cta:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 18px rgba(124, 156, 255, 0.7);
+}
+
+@keyframes aboutGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-cta { animation: none; }
+}
