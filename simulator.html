@@ -357,19 +357,19 @@
     <div class="stats-bar">
       <div class="stat-box">
         <div class="stat-label">Inlet Temp</div>
-        <div class="stat-value cool" id="inletTemp">25.0 °C</div>
+        <div class="stat-value cool" id="inletTemp">— °C</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Outlet Temp</div>
-        <div class="stat-value warm" id="outletTemp">29.8 °C</div>
+        <div class="stat-value warm" id="outletTemp">— °C</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">ΔT Coolant</div>
-        <div class="stat-value" id="deltaT" style="color:#f0883e;">4.8 °C</div>
+        <div class="stat-value" id="deltaT" style="color:#f0883e;">— °C</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Junction Temp</div>
-        <div class="stat-value" id="junctionTemp">62.3 °C</div>
+        <div class="stat-value" id="junctionTemp">— °C</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">System Status</div>
@@ -700,6 +700,24 @@ function updateSimulation() {
   const jEl = document.getElementById('junctionTemp');
   const statusEl = document.getElementById('systemStatus');
 
+  // No system in place → show no readings instead of phantom numbers
+  if (placedComponents.length === 0) {
+    inEl.textContent = '— °C';
+    outEl.textContent = '— °C';
+    dtEl.textContent = '— °C';
+    jEl.textContent = '— °C';
+    inEl.style.color = '#9da5b4';
+    outEl.style.color = '#9da5b4';
+    jEl.style.color = '#9da5b4';
+
+    statusEl.textContent = '— Empty';
+    statusEl.className = 'stat-value';
+    statusEl.style.color = '#9da5b4';
+
+    drawConnections();
+    return;
+  }
+
   inEl.textContent = finalInlet.toFixed(1) + ' °C';
   outEl.textContent = finalOutlet.toFixed(1) + ' °C';
   dtEl.textContent = (finalOutlet - finalInlet).toFixed(1) + ' °C';
@@ -711,11 +729,7 @@ function updateSimulation() {
   setTempColor(jEl, finalJunction);
 
   // System status
-  if (placedComponents.length === 0) {
-    statusEl.textContent = '— Empty';
-    statusEl.className = 'stat-value';
-    statusEl.style.color = '#9da5b4';
-  } else if (!hasPump) {
+  if (!hasPump) {
     statusEl.textContent = '⚠ No Pump';
     statusEl.className = 'stat-value';
     statusEl.style.color = '#f0883e';
