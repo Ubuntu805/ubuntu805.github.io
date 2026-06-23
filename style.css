@@ -323,96 +323,58 @@ article a {
   text-shadow: 0 0 6px rgba(255,255,255,0.9), 0 0 2px #fff;
 }
 
-/* COOLANT SIMULATOR CALL-TO-ACTION */
+/* COOLANT SIMULATOR CALL-TO-ACTION (tab-style, attention glow) */
 .sim-cta {
   display: inline-block;
   margin-top: 14px;
-  padding: 12px 26px;
+  padding: 12px 24px;
   font-size: 1.05rem;
   font-weight: bold;
   letter-spacing: 0.3px;
-  color: #fff;
+  color: #e6edf3;
   text-decoration: none;
-  border-radius: 30px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(120deg, #0077ff, #00d4ff, #4fc3f7, #0077ff);
-  background-size: 300% 300%;
-  animation: simGradient 6s ease infinite, simPulse 2.2s ease-in-out infinite;
-  box-shadow: 0 0 18px rgba(0, 212, 255, 0.6);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(22,27,34,0.92), rgba(13,40,66,0.92));
+  border: 1px solid #4fc3f7;
+  box-shadow: 0 0 16px rgba(79, 195, 247, 0.45);
+  animation: simGlow 2.2s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .sim-cta:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 0 28px rgba(0, 212, 255, 0.95);
+  transform: translateY(-2px);
+  border-color: #7fdcff;
+  box-shadow: 0 0 26px rgba(79, 195, 247, 0.85);
 }
 
-/* Shimmer sweep */
-.sim-cta::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.55), transparent);
-  transform: skewX(-20deg);
-  animation: simShimmer 3.5s ease-in-out infinite;
+@keyframes simGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(79, 195, 247, 0.4); }
+  50% { box-shadow: 0 0 24px rgba(79, 195, 247, 0.8); }
 }
 
-@keyframes simGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes simPulse {
-  0%, 100% { box-shadow: 0 0 14px rgba(0, 212, 255, 0.5); }
-  50% { box-shadow: 0 0 26px rgba(0, 212, 255, 0.9); }
-}
-
-@keyframes simShimmer {
-  0% { left: -120%; }
-  60%, 100% { left: 140%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sim-cta { animation: none; }
-  .sim-cta::after { animation: none; display: none; }
-}
-
-/* ABOUT ME CALL-TO-ACTION (toned-down companion to .sim-cta) */
+/* ABOUT ME CALL-TO-ACTION (tab-style, calmer) */
 .about-cta {
   display: inline-block;
   margin-top: 14px;
   margin-right: 12px;
-  padding: 10px 22px;
-  font-size: 1rem;
+  padding: 12px 24px;
+  font-size: 1.05rem;
   font-weight: bold;
   letter-spacing: 0.3px;
-  color: #fff;
+  color: #e6edf3;
   text-decoration: none;
-  border-radius: 30px;
-  border: 1px solid rgba(124, 156, 255, 0.5);
-  background: linear-gradient(120deg, #3a4a8a, #5566cc, #3a4a8a);
-  background-size: 200% 200%;
-  animation: aboutGradient 8s ease infinite;
-  box-shadow: 0 0 10px rgba(85, 102, 204, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(22,27,34,0.92), rgba(30,40,70,0.92));
+  border: 1px solid rgba(124, 156, 255, 0.7);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .about-cta:hover {
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 0 18px rgba(124, 156, 255, 0.7);
-}
-
-@keyframes aboutGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  transform: translateY(-2px);
+  border-color: #9db4ff;
+  box-shadow: 0 0 18px rgba(124, 156, 255, 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .about-cta { animation: none; }
+  .sim-cta { animation: none; }
 }
